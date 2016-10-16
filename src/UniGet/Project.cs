@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -22,7 +22,8 @@ namespace UniGet
             public string Version;          // SemVer version (e.g. 1.5.20-beta)
             public string Source;           // Download source (local, github:author/asset, nuget:tfm)
             public bool IncludeExtra;       // Inlcude extra contents
-            public bool IncludeMerged;      // Include merged dependencies
+            public bool IncludeMerged;      // Include merged dependencies%
+            public string SourceType;       // Download Source Type
         }
 
         public Dictionary<string, Dependency> Dependencies;

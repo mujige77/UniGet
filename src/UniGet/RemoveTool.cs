@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -78,6 +78,9 @@ namespace UniGet
                             : fileValue.ToString();
 
                         var filePath = Path.Combine(options.ProjectDir, target);
+                        Console.WriteLine($"Ignore {packageFile} due to a parsing error: {filePath}");
+                        if (Directory.Exists(filePath))
+                            Directory.Delete(filePath, true);
                         if (File.Exists(filePath))
                             File.Delete(filePath);
                         if (File.Exists(filePath + ".meta"))

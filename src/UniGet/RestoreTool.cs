@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -118,7 +118,19 @@ namespace UniGet
             var packageFile = "";
             var packageVersion = new SemVer.Version(0, 0, 0);
             var nugetTargetFrameworkMoniker = string.Empty;
-
+            var sourceName = projectId;
+            var sourceExtention = ".unitypackage";
+            if (string.IsNullOrEmpty(projectDependency.SourceType) == false)
+            {
+                var source = projectDependency.SourceType.Split(':');
+                sourceName = source[0];
+                if (source.Length > 1)
+                {
+                    sourceExtention = source[1];
+                    if (sourceExtention.Contains(".") == false)
+                        sourceExtention = sourceExtention.Insert(0, ".");
+                }
+            }
             if (projectDependency.Source != "local" && string.IsNullOrEmpty(context.Options.LocalRepositoryDirectory) == false)
             {
                 var packages = LocalPackage.GetPackages(context.Options.LocalRepositoryDirectory, projectId);
@@ -149,7 +161,7 @@ namespace UniGet
                 if (parts.Length != 2)
                     throw new InvalidDataException("Cannot determine github repo information from url: " + projectDependency.Source);
 
-                var r = await GithubPackage.DownloadPackageAsync(parts[0], parts[1], projectId, versionRange, context.Options.Token);
+                var r = await GithubPackage.DownloadPackageAsync(parts[0], parts[1], projectId, versionRange, sourceName, sourceExtention, context.Options.Token);
                 packageFile = r.Item1;
                 packageVersion = r.Item2;
             }
@@ -170,14 +182,37 @@ namespace UniGet
 
             if (string.IsNullOrEmpty(nugetTargetFrameworkMoniker))
             {
-                // apply package
+                var projectFile = Path.Combine(context.OutputDir, $"Assets/UnityPackages/{projectId}.unitypackage.json");
 
-                Extracter.ExtractUnityPackage(packageFile, context.OutputDir,
-                                              projectId, projectDependency.IncludeExtra, projectDependency.IncludeMerged);
+                // apply package
+                if (sourceExtention == ".zip")
+                {
+                   var isCreateProjectFile = SourcePackage.ExtractUnityPackage(packageFile, context.OutputDir,
+                                                  projectId, projectDependency.IncludeExtra, projectDependency.IncludeMerged);
+                    if (isCreateProjectFile)
+                    {
+                        var p = new Project { Id = projectId, Version = packageVersion.ToString() };
+                        p.Description = $"Source package";
+                        p.Files = new List<JToken>()
+                        {
+                            JToken.FromObject($"Assets/UnityPackages/{projectId}")
+                        };
+                        var jsonSettings = new JsonSerializerSettings
+                        {
+                            DefaultValueHandling = DefaultValueHandling.Ignore,
+                        };
+                        File.WriteAllText(projectFile, JsonConvert.SerializeObject(p, Formatting.Indented, jsonSettings));
+                        File.WriteAllBytes(projectFile + ".meta", Packer.GenerateMeta(projectFile, projectFile).Item2);
+                    }
+                }
+                else
+                {
+                    Extracter.ExtractUnityPackage(packageFile, context.OutputDir,
+                                                  projectId, projectDependency.IncludeExtra, projectDependency.IncludeMerged);
+                }
 
                 // deep into dependencies
 
-                var projectFile = Path.Combine(context.OutputDir, $"Assets/UnityPackages/{projectId}.unitypackage.json");
                 if (File.Exists(projectFile))
                 {
                     var project = Project.Load(projectFile);
