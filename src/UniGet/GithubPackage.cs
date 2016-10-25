@@ -13,9 +13,11 @@ namespace UniGet
     internal static class GithubPackage
     {
         public static async Task<Tuple<string, SemVer.Version>> DownloadPackageAsync(
-            string owner, string repoName, string projectId, SemVer.Range versionRange, string sourceName, string sourceExtension, string userToken = null, bool force = false)
+            string owner, string repoName, string projectId, SemVer.Range versionRange, string sourceName,
+            string sourceExtension, string userToken = null, bool force = false)
         {
-            var packages = await FetchPackagesAsync(owner, repoName, projectId, sourceName, sourceExtension, userToken: userToken);
+            var packages =
+                await FetchPackagesAsync(owner, repoName, projectId, sourceName, sourceExtension, userToken: userToken);
             var versionIndex = versionRange.GetSatisfiedVersionIndex(packages.Select(p => p.Item2).ToList());
             if (versionIndex == -1)
                 throw new ArgumentException("Cannot find a package matched version range.");
@@ -27,7 +29,8 @@ namespace UniGet
 
             var saveFileName = Path.Combine(
                 cacheRootPath,
-                string.Format("github~{0}~{1}~{2}~{3}{4}", owner, repoName, sourceName, package.Item2, sourceExtension));
+                string.Format("github~{0}~{1}~{2}~{3}{4}", owner, repoName, sourceName.Replace("*", ""), package.Item2,
+                    sourceExtension));
 
             if (File.Exists(saveFileName) == false || force)
             {
@@ -52,7 +55,8 @@ namespace UniGet
             return Path.Combine(Environment.GetEnvironmentVariable("APPDATA"), "uniget");
         }
 
-        public static async Task<List<Tuple<string, SemVer.Version>>> FetchPackagesAsync(string owner, string repoName, string projectId, string sourceName, string sourceExtension, string userToken = null)
+        public static async Task<List<Tuple<string, SemVer.Version>>> FetchPackagesAsync(string owner, string repoName,
+            string projectId, string sourceName, string sourceExtension, string userToken = null)
         {
             var packages = new List<Tuple<string, SemVer.Version>>();
 
@@ -62,6 +66,7 @@ namespace UniGet
 
             try
             {
+                var wildcard = new Wildcard(sourceName);
                 var githubReleases = await client.Repository.Release.GetAll(owner, repoName);
                 foreach (var release in githubReleases)
                 {
@@ -69,7 +74,8 @@ namespace UniGet
                     {
                         if (Path.GetExtension(a.Name).ToLower() == sourceExtension.ToLower())
                         {
-                            if (a.Name.StartsWith(sourceName))
+                            var name = Path.GetFileNameWithoutExtension(a.Name);
+                            if (string.IsNullOrEmpty(name) == false && wildcard.IsMatch(name))
                             {
                                 try
                                 {

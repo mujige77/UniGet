@@ -99,6 +99,7 @@
     <Compile Include="RestoreTool.cs" />
     <Compile Include="SemVerHelper.cs" />
     <Compile Include="SourcePackage.cs" />
+    <Compile Include="Wildcard.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -11,7 +11,8 @@ namespace UniGet
 {
     internal static class Extracter
     {
-        public static void ExtractUnityPackage(string packageFile, string outputDir, string projectId, bool includeExtra, bool includeMerged)
+        public static void ExtractUnityPackage(string packageFile, string outputDir, string projectId, bool includeExtra,
+            bool includeMerged)
         {
             var tempPath = CreateTemporaryDirectory();
 
@@ -88,6 +89,8 @@ namespace UniGet
                 // copy file
 
                 var destPath = Path.Combine(outputDir, file.Key);
+                if (destPath.Contains("/UnityPackages") == false)
+                    destPath = destPath.Insert(6, "/UnityPackages");
                 var destDirPath = Path.GetDirectoryName(destPath);
 
                 if (Directory.Exists(destDirPath) == false)
