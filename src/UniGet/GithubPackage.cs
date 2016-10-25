@@ -69,7 +69,7 @@ namespace UniGet
                     {
                         if (Path.GetExtension(a.Name).ToLower() == sourceExtension.ToLower())
                         {
-                            if (a.Name.StartsWith(sourceName + "."))
+                            if (a.Name.StartsWith(sourceName))
                             {
                                 try
                                 {
