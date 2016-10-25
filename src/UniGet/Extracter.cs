@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,10 +40,11 @@ namespace UniGet
                     continue;
 
                 var path = File.ReadAllText(pathNameFile).Trim();
+                var lines = File.ReadAllLines(pathNameFile);
                 if (File.Exists(assetFile))
-                    files.Add(path, assetFile);
+                    files.Add(lines[0], assetFile);
                 else
-                    folders.Add(path, assetFile);
+                    folders.Add(lines[0], assetFile);
             }
 
             // read project in package and get file type information
@@ -93,7 +94,8 @@ namespace UniGet
                     Directory.CreateDirectory(destDirPath);
 
                 File.Copy(file.Value, destPath, true);
-                File.Copy(file.Value + ".meta", destPath + ".meta", true);
+                if (File.Exists(file.Value + ".meta"))
+                    File.Copy(file.Value + ".meta", destPath + ".meta", true);
 
                 // mark directory for copying directory meta file later
 
@@ -110,7 +112,8 @@ namespace UniGet
                 if (folders.TryGetValue(folder, out folderPath))
                 {
                     var destPath = Path.Combine(outputDir, folder);
-                    File.Copy(folderPath + ".meta", destPath + ".meta", true);
+                    if (File.Exists(folderPath + ".meta"))
+                        File.Copy(folderPath + ".meta", destPath + ".meta", true);
                 }
             }
 
