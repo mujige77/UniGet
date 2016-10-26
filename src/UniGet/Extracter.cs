@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using Newtonsoft.Json.Linq;
@@ -96,9 +97,22 @@ namespace UniGet
                 if (Directory.Exists(destDirPath) == false)
                     Directory.CreateDirectory(destDirPath);
 
-                File.Copy(file.Value, destPath, true);
-                if (File.Exists(file.Value + ".meta"))
-                    File.Copy(file.Value + ".meta", destPath + ".meta", true);
+                while (true)
+                {
+                    try
+                    {
+                        FileCopyIfNewFile(file.Value, destPath);
+                        if (File.Exists(file.Value + ".meta"))
+                            FileCopyIfNewFile(file.Value + ".meta", destPath + ".meta");
+                        break;
+                    }
+                    catch (System.UnauthorizedAccessException ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        Thread.Sleep(10);
+                        continue;
+                    }
+                }
 
                 // mark directory for copying directory meta file later
 
@@ -115,12 +129,44 @@ namespace UniGet
                 if (folders.TryGetValue(folder, out folderPath))
                 {
                     var destPath = Path.Combine(outputDir, folder);
-                    if (File.Exists(folderPath + ".meta"))
-                        File.Copy(folderPath + ".meta", destPath + ".meta", true);
+                    while (true)
+                    {
+                        try
+                        {
+                            if (File.Exists(folderPath + ".meta"))
+                                FileCopyIfNewFile(folderPath + ".meta", destPath + ".meta");
+                            break;
+                        }
+                        catch (System.UnauthorizedAccessException ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            Thread.Sleep(10);
+                            continue;
+                        }
+                    }
                 }
             }
 
             Directory.Delete(tempPath, true);
+        }
+
+        public static void FileCopyIfNewFile(string src, string dest)
+        {
+            if (IsNewFile(src, dest))
+            {
+                File.Copy(src, dest, true);
+            }
+        }
+
+        public static bool IsNewFile(string src, string dest)
+        {
+            FileInfo destFile = new FileInfo(dest);
+            if (destFile.Exists)
+            {
+                FileInfo file = new FileInfo(src);
+                return file.LastWriteTime > destFile.LastWriteTime;
+            }
+            return true;
         }
 
         public static string CreateTemporaryDirectory()

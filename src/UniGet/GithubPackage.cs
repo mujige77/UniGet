@@ -75,7 +75,8 @@ namespace UniGet
                         if (Path.GetExtension(a.Name).ToLower() == sourceExtension.ToLower())
                         {
                             var name = Path.GetFileNameWithoutExtension(a.Name);
-                            if (string.IsNullOrEmpty(name) == false && wildcard.IsMatch(name))
+                            if (string.IsNullOrEmpty(name) == false &&
+                                (name.StartsWith(sourceName) || wildcard.IsMatch(name)))
                             {
                                 try
                                 {
